@@ -2,19 +2,11 @@ package com.omega.intervaltimer.domain
 
 import com.omega.intervaltimer.model.TimelineItem
 import com.omega.intervaltimer.model.TimelineItemType
+import com.omega.intervaltimer.model.Phase
 import com.omega.intervaltimer.model.WorkoutConfig
 
 fun buildTimeline(config: WorkoutConfig): List<TimelineItem> {
     val timeline = mutableListOf<TimelineItem>()
-
-    config.intro?.let {
-        timeline += TimelineItem(
-            type = TimelineItemType.INTRO,
-            phase = it,
-            cycleIndex = null,
-            setIndex = null
-        )
-    }
 
     for (cycle in 1..config.cycles.coerceAtLeast(1)) {
         for (set in 1..config.sets.coerceAtLeast(1)) {
@@ -27,15 +19,14 @@ fun buildTimeline(config: WorkoutConfig): List<TimelineItem> {
                 )
             }
         }
-    }
-
-    config.conclusion?.let {
-        timeline += TimelineItem(
-            type = TimelineItemType.CONCLUSION,
-            phase = it,
-            cycleIndex = null,
-            setIndex = null
-        )
+        if (cycle < config.cycles && config.restBetweenCyclesSec > 0) {
+            timeline += TimelineItem(
+                type = TimelineItemType.REST,
+                phase = Phase(name = "Repos", durationSec = config.restBetweenCyclesSec),
+                cycleIndex = cycle,
+                setIndex = null
+            )
+        }
     }
 
     return timeline

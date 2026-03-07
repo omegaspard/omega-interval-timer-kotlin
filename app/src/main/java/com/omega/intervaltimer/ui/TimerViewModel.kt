@@ -3,7 +3,6 @@ package com.omega.intervaltimer.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.omega.intervaltimer.domain.buildTimeline
-import com.omega.intervaltimer.model.Phase
 import com.omega.intervaltimer.model.TimerState
 import com.omega.intervaltimer.model.WorkoutConfig
 import kotlinx.coroutines.Job
@@ -23,35 +22,7 @@ class TimerViewModel : ViewModel() {
         rebuildFromConfig(_state.value.config)
     }
 
-    fun updateConfig(
-        introName: String,
-        introDuration: Int,
-        p1Name: String,
-        p1Duration: Int,
-        p2Name: String,
-        p2Duration: Int,
-        p3Name: String,
-        p3Duration: Int,
-        sets: Int,
-        cycles: Int,
-        conclusionName: String,
-        conclusionDuration: Int
-    ) {
-        val config = WorkoutConfig(
-            intro = if (introDuration > 0) Phase(name = introName.ifBlank { "Introduction" }, durationSec = introDuration) else null,
-            phases = listOf(
-                Phase(name = p1Name.ifBlank { "Phase 1" }, durationSec = p1Duration.coerceAtLeast(1)),
-                Phase(name = p2Name.ifBlank { "Phase 2" }, durationSec = p2Duration.coerceAtLeast(1)),
-                Phase(name = p3Name.ifBlank { "Phase 3" }, durationSec = p3Duration.coerceAtLeast(1))
-            ),
-            sets = sets.coerceAtLeast(1),
-            cycles = cycles.coerceAtLeast(1),
-            conclusion = if (conclusionDuration > 0) {
-                Phase(name = conclusionName.ifBlank { "Conclusion" }, durationSec = conclusionDuration)
-            } else {
-                null
-            }
-        )
+    fun applyConfig(config: WorkoutConfig) {
         rebuildFromConfig(config)
     }
 

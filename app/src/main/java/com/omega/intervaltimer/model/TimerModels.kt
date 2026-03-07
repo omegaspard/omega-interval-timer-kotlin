@@ -9,17 +9,15 @@ data class Phase(
 )
 
 data class WorkoutConfig(
-    val intro: Phase?,
     val phases: List<Phase>,
     val sets: Int,
     val cycles: Int,
-    val conclusion: Phase?
+    val restBetweenCyclesSec: Int = 0
 )
 
 enum class TimelineItemType {
-    INTRO,
     MAIN,
-    CONCLUSION
+    REST
 }
 
 data class TimelineItem(
@@ -42,7 +40,6 @@ data class TimerState(
 
 fun defaultWorkoutConfig(): WorkoutConfig {
     return WorkoutConfig(
-        intro = Phase(name = "Introduction", durationSec = 10),
         phases = listOf(
             Phase(name = "Phase 1", durationSec = 30),
             Phase(name = "Phase 2", durationSec = 60),
@@ -50,6 +47,6 @@ fun defaultWorkoutConfig(): WorkoutConfig {
         ),
         sets = 2,
         cycles = 2,
-        conclusion = Phase(name = "Conclusion", durationSec = 15)
+        restBetweenCyclesSec = 0
     )
 }
