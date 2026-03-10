@@ -8,15 +8,25 @@ data class Phase(
     val durationSec: Int
 )
 
+data class WorkTimer(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String,
+    val durationSec: Int,
+    val restAfterSec: Int = 10
+)
+
 data class WorkoutConfig(
-    val phases: List<Phase>,
+    val preparation: Phase?,
+    val workTimers: List<WorkTimer>,
     val sets: Int,
+    val restBetweenSetsSec: Int = 0,
     val cycles: Int,
     val restBetweenCyclesSec: Int = 0
 )
 
 enum class TimelineItemType {
-    MAIN,
+    PREPARATION,
+    WORK,
     REST
 }
 
@@ -40,13 +50,13 @@ data class TimerState(
 
 fun defaultWorkoutConfig(): WorkoutConfig {
     return WorkoutConfig(
-        phases = listOf(
-            Phase(name = "Phase 1", durationSec = 30),
-            Phase(name = "Phase 2", durationSec = 60),
-            Phase(name = "Phase 3", durationSec = 90)
+        preparation = Phase(name = "Preparation", durationSec = 30),
+        workTimers = listOf(
+            WorkTimer(name = "Travail", durationSec = 20, restAfterSec = 10)
         ),
-        sets = 2,
-        cycles = 2,
-        restBetweenCyclesSec = 0
+        sets = 4,
+        restBetweenSetsSec = 45,
+        cycles = 3,
+        restBetweenCyclesSec = 180
     )
 }

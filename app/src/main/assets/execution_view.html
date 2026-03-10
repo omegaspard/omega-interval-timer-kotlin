@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Execution View</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font-family: Inter, Arial, sans-serif; }
+    body {
+      background: #ef4444;
+      color: #fff;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      transition: background-color .35s ease;
+    }
+    .header { display: flex; justify-content: space-between; padding: 18px 18px 10px; }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      height: 46px;
+      min-width: 46px;
+      padding: 0 14px;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .btn-soft { background: rgba(255,255,255,.2); color: #fff; }
+    .btn-main { background: #fff; color: #ef4444; font-weight: 700; }
+    .controls { display: flex; gap: 8px; }
+    .main { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 0 20px 20px; }
+    .total { text-align: center; margin-top: 8px; }
+    .total-label { font-size: 12px; font-weight: 700; letter-spacing: 1.8px; opacity: .85; text-transform: uppercase; }
+    .total-value { font-size: 46px; font-weight: 800; margin-top: 6px; }
+    .ring-wrap { width: 100%; max-width: 330px; aspect-ratio: 1 / 1; margin: 0 auto; position: relative; }
+    .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring-bg { fill: transparent; stroke: rgba(255,255,255,.28); stroke-width: 6; }
+    .ring-progress { fill: transparent; stroke: #fff; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset .8s linear; }
+    .ring-center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center;
+    }
+    .phase-label { font-size: 28px; letter-spacing: 2px; font-weight: 800; margin-bottom: 8px; text-transform: uppercase; }
+    .phase-time { font-size: 84px; font-weight: 900; line-height: .92; letter-spacing: -2px; }
+    .meta-row { display: flex; justify-content: space-around; margin-top: 10px; }
+    .meta-col { text-align: center; }
+    .meta-k { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .8; font-weight: 700; }
+    .meta-v { font-size: 38px; font-weight: 900; margin-top: 3px; line-height: 1; }
+    .dots { display: flex; justify-content: center; gap: 11px; margin-top: 10px; min-height: 22px; }
+    .dot {
+      width: 11px; height: 11px; border-radius: 999px; border: 2px solid rgba(255,255,255,.5);
+      background: transparent;
+    }
+    .dot.done { background: #fff; border-color: #fff; }
+    .dot.current { width: 18px; height: 18px; border-color: #fff; display: grid; place-items: center; }
+    .dot.current::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: #fff; }
+    .footer { margin-top: auto; display: flex; flex-direction: column; gap: 18px; }
+    .progress { width: 100%; height: 9px; border-radius: 99px; background: rgba(255,255,255,.22); overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: #fff; border-radius: 99px; }
+    .config {
+      width: 100%; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #fff;
+      border-radius: 18px; padding: 16px 14px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <button class="btn btn-soft" onclick="Bridge.home()">⌂</button>
+    <div class="controls">
+      <button id="primaryBtn" class="btn btn-main" onclick="Bridge.primary()">▶</button>
+      <button class="btn btn-soft" onclick="Bridge.restart()">↻</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="total">
+      <div class="total-label">Temps total restant</div>
+      <div id="totalValue" class="total-value">00:00</div>
+    </div>
+
+    <div class="ring-wrap">
+      <svg viewBox="0 0 100 100">
+        <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
+        <circle id="ringProgress" class="ring-progress" cx="50" cy="50" r="45"></circle>
+      </svg>
+      <div class="ring-center">
+        <div id="phaseLabel" class="phase-label">TRAVAIL</div>
+        <div id="phaseTime" class="phase-time">00:00</div>
+      </div>
+    </div>
+
+    <div class="meta-row">
+      <div class="meta-col">
+        <div class="meta-k">Cycle</div>
+        <div id="cycleValue" class="meta-v">0 / 0</div>
+      </div>
+      <div class="meta-col">
+        <div class="meta-k">Set</div>
+        <div id="setValue" class="meta-v">0 / 0</div>
+      </div>
+    </div>
+
+    <div id="dots" class="dots"></div>
+
+    <footer class="footer">
+      <div class="progress"><div id="globalBar" class="progress-bar"></div></div>
+      <button class="config" onclick="Bridge.config()">Configurer</button>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const circumference = 2 * Math.PI * 45;
+      const ring = document.getElementById('ringProgress');
+      ring.style.strokeDasharray = String(circumference);
+      ring.style.strokeDashoffset = String(circumference);
+
+      function phaseToBodyColor(hex) {
+        document.body.style.backgroundColor = hex || '#ef4444';
+        const mainButton = document.getElementById('primaryBtn');
+        mainButton.style.color = hex || '#ef4444';
+      }
+
+      function setDots(totalSets, currentSet) {
+        const root = document.getElementById('dots');
+        root.innerHTML = '';
+        const total = Math.max(1, Number(totalSets || 1));
+        const current = Number(currentSet || 0);
+        for (let i = 1; i <= total; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'dot';
+          if (current > 0 && i < current) dot.classList.add('done');
+          if (current > 0 && i === current) dot.classList.add('current');
+          root.appendChild(dot);
+        }
+      }
+
+      window.renderTimer = function (data) {
+        document.getElementById('totalValue').textContent = data.totalRemaining || '00:00';
+        document.getElementById('phaseLabel').textContent = data.phaseLabel || 'AUCUNE';
+        document.getElementById('phaseTime').textContent = data.phaseTime || '00:00';
+        document.getElementById('cycleValue').textContent = `${data.currentCycle || 0} / ${data.totalCycles || 0}`;
+        document.getElementById('setValue').textContent = `${data.currentSet || 0} / ${data.totalSets || 0}`;
+        document.getElementById('primaryBtn').textContent = data.primaryIcon || '▶';
+        setDots(data.totalSets, data.currentSet);
+
+        const phaseP = Math.max(0, Math.min(1, Number(data.phaseProgress || 0)));
+        const dashOffset = circumference - phaseP * circumference;
+        ring.style.strokeDashoffset = String(dashOffset);
+
+        const totalP = Math.max(0, Math.min(1, Number(data.totalProgress || 0)));
+        document.getElementById('globalBar').style.width = `${Math.round(totalP * 100)}%`;
+
+        phaseToBodyColor(data.phaseColor);
+      };
+
+      window.renderTimerFromString = function (json) {
+        try {
+          const data = JSON.parse(json);
+          window.renderTimer(data);
+        } catch (e) {
+          console.log('timer parse error', e);
+        }
+      };
+    })();
+  </script>
+</body>
+</html>
